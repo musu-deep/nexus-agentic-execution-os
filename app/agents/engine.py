@@ -44,9 +44,32 @@ AGENT_REGISTRY = [
 class AgentEngine:
     def __init__(self) -> None:
         self.client = None
-        if not settings.demo_mode and settings.gemini_api_key:
-            from google import genai
+        self.backend = "demo"
+
+        if settings.demo_mode:
+            return
+
+        from google import genai
+
+        if settings.use_vertex_ai:
+            if not settings.google_cloud_project:
+                raise RuntimeError("GOOGLE_CLOUD_PROJECT is required when USE_VERTEX_AI=true.")
+            self.client = genai.Client(
+                vertexai=True,
+                project=settings.google_cloud_project,
+                location=settings.google_cloud_location,
+            )
+            self.backend = "vertex-ai"
+            return
+
+        if settings.gemini_api_key:
             self.client = genai.Client(api_key=settings.gemini_api_key)
+            self.backend = "gemini-api-key"
+            return
+
+        raise RuntimeError(
+            "No Gemini backend configured. Set USE_VERTEX_AI=true or provide GEMINI_API_KEY."
+        )
 
     def _model_call(self, role: str, prompt: str, mission: dict[str, Any]) -> str:
         if self.client is None:
