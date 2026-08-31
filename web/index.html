@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS — Agentic Execution OS</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#071014;--panel:#0c171c;--panel2:#101f25;--text:#eef6f6;--muted:#8ea3a8;
+  --line:#1e333a;--a:#71f5c8;--b:#76a8ff;--warn:#ffd479;
+}
+*{box-sizing:border-box} body{margin:0;background:
+radial-gradient(circle at 15% 0%,#102d30 0,transparent 30%),
+radial-gradient(circle at 85% 10%,#15213b 0,transparent 25%),var(--bg);
+font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+.wrap{max-width:1280px;margin:auto;padding:32px}.top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}
+.brand h1{font-size:38px;letter-spacing:-1.5px;margin:0}.brand p{color:var(--muted);max-width:730px;line-height:1.6}
+.badge{border:1px solid var(--line);background:#0b181bcc;padding:10px 14px;border-radius:999px;color:var(--a);font-size:13px}
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-top:24px}
+.card{background:linear-gradient(180deg,#0e1b20e8,#091318e8);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 18px 50px #0005}
+h2{font-size:16px;margin:0 0 16px;color:#dce9e9} label{font-size:12px;color:var(--muted);display:block;margin:14px 0 7px}
+textarea,input{width:100%;background:#071114;border:1px solid #22373e;color:var(--text);border-radius:13px;padding:12px;font:inherit}
+textarea{min-height:94px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{width:100%;margin-top:16px;padding:13px 16px;border:0;border-radius:13px;background:linear-gradient(90deg,var(--a),#a3ffe2);font-weight:800;color:#062019;cursor:pointer}
+button:disabled{opacity:.5}.status{font-size:28px;font-weight:800}.muted{color:var(--muted);font-size:13px}.bar{height:8px;background:#13242a;border-radius:20px;overflow:hidden;margin:15px 0}.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b));width:7%;transition:.4s}
+.agent-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:18px}.agent{border:1px solid var(--line);border-radius:15px;padding:14px;background:#0b161b}
+.agent strong{font-size:12px;display:block}.agent span{font-size:10px;color:var(--muted)}
+.outputs{display:grid;gap:10px}.output{border-left:2px solid var(--b);padding:10px 12px;background:#0a151a;border-radius:0 12px 12px 0}
+.output b{display:block;font-size:11px;color:var(--b);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}.output div{font-size:13px;line-height:1.55;white-space:pre-wrap}
+.audit{max-height:420px;overflow:auto}.evt{display:grid;grid-template-columns:94px 105px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #13252b;font-size:11px}.evt .ok{color:var(--a)}
+.footer{color:#60777e;text-align:center;font-size:11px;margin:24px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.agent-grid{grid-template-columns:1fr 1fr}.top{display:block}.badge{display:inline-block;margin-top:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <h1>NEXUS</h1>
+      <p>Autonomous Institutional Execution OS — a governed fleet of agents that turns executive goals into traceable plans, evidence reviews, risk controls, and decision-ready execution.</p>
+    </div>
+    <div class="badge">All Things Agentic Hackathon · 2026</div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Launch a mission</h2>
+      <label>Executive objective</label>
+      <textarea id="objective">Launch a professional training program in three cities within 30 days while keeping total spending under the approved budget.</textarea>
+      <div class="row">
+        <div><label>Deadline (days)</label><input id="days" type="number" value="30"></div>
+        <div><label>Budget</label><input id="budget" type="number" value="300000"></div>
+      </div>
+      <button id="launch">Run autonomous execution</button>
+      <div class="agent-grid" id="agents"></div>
+    </section>
+
+    <section class="card">
+      <h2>Mission runtime</h2>
+      <div class="status" id="status">Ready</div>
+      <div class="muted" id="stage">No mission has been launched.</div>
+      <div class="bar"><span id="progress"></span></div>
+      <div class="muted" id="missionId">—</div>
+    </section>
+
+    <section class="card">
+      <h2>Decision package</h2>
+      <div class="outputs" id="outputs">
+        <div class="muted">Agent outputs will appear here as the mission progresses.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Agent observability</h2>
+      <div class="audit" id="audit"><div class="muted">No trace events yet.</div></div>
+    </section>
+  </div>
+  <div class="footer">NEXUS · new hackathon build · Gemini 3.5+ · Google GenAI SDK · Cloud Run / Firestore / Pub/Sub ready</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let poller = null;
+
+async function loadAgents(){
+  const r = await fetch('/api/agents'); const data = await r.json();
+  $('agents').innerHTML = data.agents.map(a => `<div class="agent"><strong>${a.name}</strong><span>${a.id}</span></div>`).join('');
+}
+function pct(status, stage){
+  if(status==='completed') return 100;
+  if(status==='failed') return 100;
+  if(stage.includes('Executive communication')) return 88;
+  if(stage.includes('Executive synthesis')) return 72;
+  if(stage.includes('Parallel')) return 48;
+  if(status==='planning') return 25;
+  if(status==='queued') return 8;
+  return 8;
+}
+function render(m){
+  $('status').textContent = m.status.toUpperCase();
+  $('stage').textContent = m.current_stage;
+  $('missionId').textContent = `Mission ${m.id}`;
+  $('progress').style.width = pct(m.status,m.current_stage)+'%';
+  const labels = {strategy:'Strategy',data:'Evidence',risk:'Risk',executive:'Executive decision',brief:'Executive brief'};
+  const keys = ['strategy','data','risk','executive','brief'].filter(k => m.result && m.result[k]);
+  $('outputs').innerHTML = keys.length ? keys.map(k => `<div class="output"><b>${labels[k]}</b><div>${escapeHtml(m.result[k])}</div></div>`).join('') : '<div class="muted">Agents are working…</div>';
+  $('audit').innerHTML = (m.audit||[]).slice().reverse().map(e => `<div class="evt"><span>${new Date(e.timestamp).toLocaleTimeString()}</span><span class="${e.status==='ok'?'ok':''}">${e.agent}</span><span>${escapeHtml(e.detail)}</span></div>`).join('') || '<div class="muted">No trace events yet.</div>';
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+async function poll(id){
+  const r = await fetch('/api/missions/'+id);
+  if(!r.ok) return;
+  const m = await r.json(); render(m);
+  if(['completed','failed'].includes(m.status)){clearInterval(poller);$('launch').disabled=false;}
+}
+$('launch').onclick = async () => {
+  $('launch').disabled=true;
+  const payload={objective:$('objective').value,deadline_days:Number($('days').value),budget:Number($('budget').value),context:{cities:3,source:'hackathon-demo'}};
+  const r=await fetch('/api/missions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const m=await r.json(); render(m);
+  poller=setInterval(()=>poll(m.id),900);
+};
+loadAgents();
+</script>
+</body>
+</html>

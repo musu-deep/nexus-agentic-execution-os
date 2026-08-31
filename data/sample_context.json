@@ -1,0 +1,23 @@
+{
+  "mission": "Launch a professional training program in three cities within 30 days.",
+  "cities": [
+    "City A",
+    "City B",
+    "City C"
+  ],
+  "budget": 300000,
+  "historical_signals": [
+    {
+      "signal": "venue lead time",
+      "value": "7-14 days"
+    },
+    {
+      "signal": "trainer confirmation",
+      "value": "5-10 days"
+    },
+    {
+      "signal": "late procurement premium",
+      "value": "8-15%"
+    }
+  ]
+}
