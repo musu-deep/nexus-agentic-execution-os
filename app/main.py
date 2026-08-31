@@ -33,7 +33,10 @@ def health():
         "status": "ok",
         "app": settings.app_name,
         "model": settings.gemini_model,
+        "backend": engine.backend,
         "demo_mode": settings.demo_mode,
+        "vertex_ai": settings.use_vertex_ai,
+        "location": settings.google_cloud_location if settings.use_vertex_ai else None,
         "firestore": settings.use_firestore,
         "pubsub": settings.use_pubsub,
     }
